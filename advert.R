@@ -18,14 +18,23 @@ install.packages("caret")
 #The deliverables for this week’s Independent project include: 
   
  # R Markdown Document hosted on Github
-
-
+install.packages('cowplot')
+install.packages('parallel')
+install.packages('foreach')
+install.packages('doParallel')
+install.packages('e1071', dependencies=TRUE)
 
 # Package
 library(tidyverse)  # data manipulation and visualization
 library(modelr)     # provides easy pipeline modeling functions
 library(broom)      # helps to tidy up model outputs
-library(ggplot2)
+library(ggplot2)    # Used for ggplot for comparing variables
+library(cowplot)    # Used for ggplot visualization output
+library(parallel)   # Used in KNN for preparing parallel precessing
+library(doParallel)
+library(foreach)
+library(caret)
+
 
 ## Loading the data
 advert <- read.csv('advertising.csv')
@@ -74,23 +83,89 @@ sum(duplicated(advert))
 unique(advert)
 ## We find out that every column have several unique values
 
+## Column names
+names(advert)
+
 # Summarizing data
 summary(advert)
 ## Summary of each and every column including Min, Max, Mean, Median, Quantiles
+
+# Bivariate Analysis
+#  Plot a boxplot to help  visualise any existing outliers 
+boxplot(advert)
+## Has outliers and won't drop them as at times outliers are of importance
+
+## Histogram to show the distribution of age in the dataset
+hist(advert$Age)
+## Most of the people who took part in the advertisement Age lied between 30 - 35
+
+## Histogram to show the distribution of gender in the dataset
+hist(advert$Male)
+## Male are indicated as 1 and female are 0 where female are slightly more than male
+
+## Histogram to show the distribution of gender in the dataset
+hist(advert$Area.Income)
+## From the dataset most of the people earned 6000 - 6500
+
+## Histogram to show the distribution of Daily.Time.Spent.on.Site in the dataset
+hist(advert$Daily.Time.Spent.on.Site)
+## From the dataset time that was mostly spent on site was 75 - 80
+
+## Multivariate
+## GGplot
+plot1 <- ggplot(advert, aes(x = Age, y = Daily.Internet.Usage, color = Clicked.on.Ad)) + geom_point(size = 3) +
+  theme(text = element_text(size = 10), axis.text.x = element_text(size = 5),axis.text.y = element_text(size = 5))
+plot_grid(plot1)
+##
+
+## 
+plot2 <- ggplot(advert, aes(x = Daily.Time.Spent.on.Site, y=Daily.Internet.Usage, color=Clicked.on.Ad)) + geom_point(size=3)+
+  theme(text = element_text(size=10) ,axis.text.x = element_text(size = 5),axis.text.y = element_text(size = 5))
+plot_grid(plot2)
+##
+
+##
+plot3 <- ggplot(advert, aes(x = Age, y = Area.Income, color=Clicked.on.Ad)) + geom_point(size=3)+
+  theme(text = element_text(size=10) ,axis.text.x = element_text(size = 5),axis.text.y = element_text(size = 5))
+plot_grid(plot3)
+## 
+
+##
+plot4 <- ggplot(advert, aes(x = Area.Income, y = Daily.Internet.Usage, color = Clicked.on.Ad)) + geom_point(size=3)+
+  theme(text = element_text(size=10) ,axis.text.x = element_text(size = 5),axis.text.y = element_text(size = 5))
+plot_grid(plot4)
+## 
+
+# SPLITTING TRAIN AND TEST SET
+advert$Clicked.on.Ad = as.factor(advert$Clicked.on.Ad)
+training1 <- createDataPartition(y = advert$Clicked.on.Ad, p = .75, list = FALSE)
+
+# TRAIN SET
+training <- advert[training1,]
+
+# TEST SUBSET
+testing  <- advert[-training1,]
+
+# KNN
+# Prepare Parallel Process
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+#control parameters for cross-validation
+controlknn <- trainControl(method = "repeatedcv", number = 10, repeats = 3, verboseIter = TRUE)
+KNNall <- train(Clicked.on.Ad ~ .,data = training, method = "knn",trControl = controlknn,preProc = c("center", "scale"),tuneLength = 10)
+
+## KNN model output
+KNNall
+
 
 
 # Import the random forest library and fit a model
 install.packages('randomForest')
 library(randomForest)
-Advert = randomForest(Clicked.on.Ad ~ Daily.Time.Spent.on.Site + Age + Daily.Internet.Usage + Ad.Topic.Line + City + Country + Timestamp + Male + Area.Income, data = advert, importance = TRUE)                          
+Advert = randomForest(Clicked.on.Ad ~ Daily.Time.Spent.on.Site + Age + Daily.Internet.Usage + Ad.Topic.Line + City + Country + Timestamp + Male + Area.Income, data = advert, importance = TRUE)                    
                                            
 # Create an importance based on mean decreasing gini
 importance(Advert)
 
-#  Plot a boxplot to help  visualise any existing outliers 
-# 
-#  
-boxplot(advert)
 
-## List the outliers in vectors
-boxplot.stats(advert)$out
