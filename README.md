@@ -32,19 +32,17 @@ We have the following columns:
 'Clicked.on.Ad'
 
 Steps Followed
-1.Loading Data
 
+Step 1.Loading Data
   Using tidyverse library
-2.Data Exploration/Cleaning
 
-  Renamed the columns
+Step 2.Data Exploration/Cleaning
+Renamed the columns
+There were no missing values and duplicates
+The few outliers that were avilable I did not remove them so that we can identify the reasons as to why they exist and at times there are of importance
 
-  There were no missing values and duplicates
+Step 3.Model Training
+I used KNeighbours Classifier to fit the model
 
-  The few outliers that were avilable i dint remove them so that we can identify the reasons as to why they exist
-3.Model Training
-
-  I used KNeighbours Classifier to fit the model
-4.Model Prediction
-
-  using the split data to make prediction
+Step 4.Model Prediction
+using the split data to make prediction
